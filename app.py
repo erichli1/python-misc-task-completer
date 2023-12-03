@@ -53,7 +53,7 @@ class AddToGoodMomentsJournalParams:
 class AddToJournalParams:
     def __init__(self):
         self.entry = Param(
-            content="", description="The content of the journal entry.", default="")
+            content="", description="The content of the journal entry.")
         self.date = Param(
             content="", description="The date that the journal entry occurred.", default=get_local_date())
 
@@ -61,12 +61,11 @@ class AddToJournalParams:
 class AddToGcalParams:
     def __init__(self):
         self.name = Param(
-            content="", description="The name of the event.", default="")
-        # TODO: replace default datetime with right now
-        self.startDatetime = Param(content="", description="The start datetime of the event. Please format as ISO 8601 with UTC-5:00 timezone.",
-                                   default="2023-12-02T22:00:00-05:00")
+            content="", description="The name of the event.")
+        self.startDatetime = Param(
+            content="", description="The start datetime of the event. Please format as ISO 8601 with UTC-5:00 timezone unless otherwise specified.")
         self.endDatetime = Param(
-            content="", description="The end datetime of the event. Please format as ISO 8601 with UTC-5:00 timezone.", default="2023-12-02T23:00:00-05:00")
+            content="", description="The end datetime of the event. Please format as ISO 8601 with UTC-5:00 timezone unless otherwise specified. Default to 30 minutes after the start time.")
 
 
 ParamType = Union[AddToGoodMomentsJournalParams, AddToJournalParams]
@@ -180,7 +179,10 @@ def get_params_of_task(text: str, _task: Capability, _expander: DeltaGenerator):
                         raise Exception
                 paramObject.content = content
             except:
-                # TODO: write that the params parsing was ill-formed
+                if paramObject.default is None:
+                    _expander.write(
+                        f"Tried to use default value for {paramKey} but none existed.")
+                    return None
                 _expander.write(
                     f"Set {paramKey} to default value: {paramObject.default}")
                 paramObject.content = paramObject.default
