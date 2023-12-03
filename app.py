@@ -10,6 +10,7 @@ from notion_client import Client
 from streamlit.delta_generator import DeltaGenerator
 from dotenv import load_dotenv
 
+from gcal import setup, add_to_calendar
 from utils import get_local_date
 
 load_dotenv()
@@ -57,13 +58,24 @@ class AddToJournalParams:
             content="", description="The date that the journal entry occurred.", default=get_local_date())
 
 
+class AddToGcalParams:
+    def __init__(self):
+        self.name = Param(
+            content="", description="The name of the event.", default="")
+        # TODO: replace default datetime with right now
+        self.startDatetime = Param(content="", description="The start datetime of the event. Please format as ISO 8601 with UTC-5:00 timezone.",
+                                   default="2023-12-02T22:00:00-05:00")
+        self.endDatetime = Param(
+            content="", description="The end datetime of the event. Please format as ISO 8601 with UTC-5:00 timezone.", default="2023-12-02T23:00:00-05:00")
+
+
 ParamType = Union[AddToGoodMomentsJournalParams, AddToJournalParams]
 
 
 def get_specific_params_object(task: Capability) -> ParamType:
     match task:
         case "addToGcal":
-            return AddToGoodMomentsJournalParams()
+            return AddToGcalParams()
         case "addToJournal":
             return AddToJournalParams()
         case "addToGoodMomentsJournal":
@@ -129,7 +141,7 @@ def pull_params_as_json_string_from_text(text: str, _inputParamObject):
             {
                 "role": "system",
                 "content":
-                "You are given a list of parameters and descriptions as well as an input string from the user. Please fill the parameters and return filled parameters as a JSON. For example, if the parameters are { text: 'the text to add to the journal', date: 'the date to add to the journal' } and the input string is 'add to good moment on Nov 12 2023 that I had a good time with my friends', the output should be { text: 'good time with my friends', date: '2023-11-12' }. If the content of a field is unclear, please leave it out. For instance, if date is not specified by the month and day, please exclude the date parameter.",
+                f"You are given a list of parameters and descriptions as well as an input string from the user. Please fill the parameters and return filled parameters as a JSON. For example, if the parameters are {{ text: 'the text to add to the journal', date: 'the date to add to the journal' }} and the input string is 'add to good moment on Nov 12 2023 that I had a good time with my friends', the output should be {{ text: 'good time with my friends', date: '2023-11-12' }}. If the content of a field is unclear, please leave it out. For instance, if date is not specified by the month and day, please exclude the date parameter. Note that today refers to {get_local_date()}.",
             },
             {
                 "role": "system",
@@ -183,7 +195,21 @@ def execute_task(text: str, _task: Capability, _params: ParamType):
     # LATER: account for non-completed params and request the user
     match _task:
         case Capability.ADD_TO_GCAL.value:
-            pass
+            gcal_params: AddToGcalParams = _params
+            input_event = {
+                'summary': gcal_params.name.content,
+                'start': {
+                    'dateTime': gcal_params.startDatetime.content,
+                },
+                'end': {
+                    'dateTime': gcal_params.endDatetime.content,
+                },
+            }
+            service = setup()
+            if service is not None:
+                event = add_to_calendar(service, input_event)
+                st.write(f"Event created: {event.get('htmlLink')}")
+
         case Capability.ADD_TO_JOURNAL.value:
             journal_params: AddToJournalParams = _params
             notion.pages.create(**{
@@ -243,11 +269,6 @@ def main():
     input_text = st.text_input("Enter task")
 
     if len(input_text) > 0:
-        # task = Capability.ADD_TO_GOOD_MOMENTS_JOURNAL
-        # params = AddToGoodMomentsJournalParams()
-        # params.entry.content = "test"
-        # params.date.content = "2023-12-01"
-        # execute_task(task, params)
         expander = st.expander("Show process")
         task = identify_task(input_text)
         expander.write("Identified task: " + str(task))
