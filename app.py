@@ -210,7 +210,8 @@ def execute_task(text: str, _task: Capability, _params: ParamType):
             service = setup()
             if service is not None:
                 event = add_to_calendar(service, input_event)
-                st.write(f"Event created: {event.get('htmlLink')}")
+                st.write(
+                    f"Added to GCal: {gcal_params.startDatetime.content} - [{gcal_params.name.content}]({event.get('htmlLink')})")
 
         case Capability.ADD_TO_JOURNAL.value:
             journal_params: AddToJournalParams = _params
