@@ -135,7 +135,8 @@ def get_param_descriptions_as_string(inputParamObject):
 @st.cache_data
 def pull_params_as_json_string_from_text(text: str, _inputParamObject):
     completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-3.5-turbo-1106",
+        response_format={"type": "json_object"},
         messages=[
             {
                 "role": "system",
