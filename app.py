@@ -239,7 +239,7 @@ def execute_task(text: str, _task: Capability, _params: ParamType):
                 }
             })
             st.write(
-                f"Added to Journal: {good_moments_params.date.content} - {good_moments_params.entry.content}")
+                f"Added to Journal: {journal_params.date.content} - {journal_params.entry.content}")
         case Capability.ADD_TO_GOOD_MOMENTS_JOURNAL.value:
             good_moments_params: AddToGoodMomentsJournalParams = _params
             notion.pages.create(**{
