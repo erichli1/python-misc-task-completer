@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 from gcal import setup, add_to_calendar
 from utils import get_local_date
+from oauth import block_on_oauth
 
 load_dotenv()
 
@@ -270,6 +271,9 @@ def execute_task(text: str, _task: Capability, _params: ParamType):
 
 def main():
     st.title("Misc task completer")
+    if block_on_oauth():
+        return
+
     input_text = st.text_input("Enter task")
 
     if len(input_text) > 0:
